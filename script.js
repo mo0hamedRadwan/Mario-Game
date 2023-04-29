@@ -20,6 +20,13 @@ const platformImg = creatImage("images/platform.png");
 const platformSmallImg = creatImage("images/platformSmallTall.png");
 const hillsImg = creatImage("images/hills.png");
 const backgroundImg = creatImage("images/background.png");
+const goombaImg = creatImage("images/goomba.png");
+
+const backgroundSound = createAudio("audio/Background.mp3");
+const coinSound = createAudio("audio/Coin.mp3");
+const killEnemySound = createAudio("audio/KillEnemy.mp3");
+const gameOverByEnemySound = createAudio("audio/GameOverEnemy.mp3");
+const gameOverFallSound = createAudio("audio/GameOverFall.mp3");
 
 
 const gravity = 0.5;
@@ -159,15 +166,17 @@ class Enemy{
             start : s,
             end : e,
         }
+        this.image = goombaImg;
         this.width = 50;
-        this.height = 50;
+        this.height = 60;
         this.speed = 5;
     }
 
     draw(){
         context.beginPath();
-        context.fillStyle = "blue";
-        context.fillRect(this.position.x, this.position.y, this.width, this.height);
+        // context.fillStyle = "blue";
+        // context.fillRect(this.position.x, this.position.y, this.width, this.height);
+        context.drawImage(this.image, this.position.x, this.position.y);
         context.closePath();
     }
 
@@ -226,6 +235,8 @@ let offScrollSet = 0;
 let score = 0;
 let jump = 0;
 let level2 = false;
+let muted = false;
+
 const keys = {
     right: {
         pressed: false
@@ -239,6 +250,12 @@ function creatImage(path) {
     const img = new Image();
     img.src = path;
     return img;
+}
+
+function createAudio(path) {
+    const audio = new Audio();
+    audio.src = path;
+    return audio;
 }
 
 function initGame() {
@@ -359,6 +376,10 @@ function initGame() {
     score = 0;
     jump = 0;
     scoreEl[0].innerHTML = score;
+
+    backgroundSound.play();
+    backgroundSound.volume = muted ? 0 : 0.1;
+
     window.addEventListener("keydown", EventkeyDown);
     window.addEventListener("keyup", EventkeyUp);
 }
@@ -432,6 +453,9 @@ function animate() {
             && player.position.y + player.height /2 <= coin.position.y + coin.height) {
         score += 25;
         scoreEl[0].innerHTML = score;
+        // Coin Sound
+        coinSound.play();
+        coinSound.volume = 0.1;
         // Delete Coin
         setTimeout(() => {
             coins.splice(index , 1);
@@ -452,6 +476,13 @@ function animate() {
         result.style.display = "block";
         gameOver.style.display = "flex";
         scoreEl[1].innerHTML = score;
+        
+        // Game Over Sound
+        if(!muted){
+            backgroundSound.pause();
+            gameOverFallSound.play();
+            gameOverFallSound.volume = 0.3;
+        }
 
         cancelAnimationFrame(animateID);
     }
@@ -549,6 +580,9 @@ function animate2(){
             && player.position.y + player.height /2 <= coin.position.y + coin.height) {
         score += 25;
         scoreEl[0].innerHTML = score;
+        // Coin Sound
+        coinSound.play();
+        coinSound.volume = 0.1;
         // Delete Coin
         setTimeout(() => {
             coins.splice(index , 1);
@@ -562,17 +596,19 @@ function animate2(){
         let dis = Math.abs(player.position.x - enemy.position.x)
         if((dis < player.width || dis < enemy.width)
             && player.position.y + player.height >= enemy.position.y
-            && player.position.y + player.height <= enemy.position.y + 10){
+            && player.position.y + player.height <= enemy.position.y + 30){
                 console.log("enemy Killed!");
                 score += 100;
                 scoreEl[0].innerHTML = score;
-
+                // Kill Enemy Sound
+                killEnemySound.play();
+                killEnemySound.volume = 0.1;
                 // Create Explosions
                 for (let i = 0; i < 15 ; i++){
                     particles.push(new Particle(
                         enemy.position.x + enemy.width / 2,
                         enemy.position.y + enemy.height / 2,
-                        Math.random() * 3, "blue",
+                        Math.random() * 3, "brown",
                         {
                             x: (Math.random() - 0.5) * 2,
                             y: (Math.random() - 0.5) * 2,
@@ -583,13 +619,20 @@ function animate2(){
                 setTimeout(() => {
                     enemies.splice(index , 1);
                 }), 100;
-        }else if((dis < player.width || dis < enemy.width)
-            && player.position.y + player.height >= enemy.position.y
+        }else if((dis < player.width + 10 || dis < enemy.width + 10)
+            && player.position.y + player.height > enemy.position.y
             && player.position.y + player.height + 50 >= enemy.position.y + enemy.height){
                 // Lose Scenario
                 result.style.display = "block";
                 gameOver.style.display = "flex";
                 scoreEl[1].innerHTML = score;
+
+                // Kill Player Sound
+                if(!muted){
+                    backgroundSound.pause();
+                    gameOverByEnemySound.play();
+                    gameOverByEnemySound.volume = 0.1;
+                }
 
                 setTimeout(() => {
                     cancelAnimationFrame(animateID);
@@ -611,6 +654,13 @@ function animate2(){
         gameOver.style.display = "flex";
         scoreEl[1].innerHTML = score;
         
+        // Game Over Sound
+        if(!muted){
+            backgroundSound.pause();
+            gameOverFallSound.play();
+            gameOverFallSound.volume = 0.3;
+        }
+
         setTimeout(() => {
             cancelAnimationFrame(animateID);
         }, 1000);
